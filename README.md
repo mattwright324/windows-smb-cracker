@@ -9,7 +9,7 @@ and whether or not they have been tested.
 
 | Windows | Tested | Works |
 | :------ | :----: | :---: |
-| Windows 10 | &#10003; | &#10003; |
+| Windows 10 | &#10003; | &#10005; |
 | Windows 8.1 | &#10005; | |
 | Windows 8 | &#10005; | |
 | Windows 7 | &#10003; | &#10003; |
@@ -22,7 +22,7 @@ and whether or not they have been tested.
 | Windows Server | Tested | Works |
 | :------ | :----: | :---: |
 | Server 2016 | &#10005; | |
-| Server 2012 | &#10005; | |
+| Server 2012 | &#10003; | &#10003; |
 | Server 2008 | &#10005; | |
 | Server 2003 | &#10003; | &#10003; |
 | Server 2000 | &#10005; | |
