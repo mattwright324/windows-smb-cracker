@@ -313,7 +313,6 @@ public class Cracker extends Application {
                                     cont.setOnAction(ae2 -> {
                                         cancel.fire();
                                         es.execute(() -> startCracker(addr, dom));
-
                                     });
                                     Platform.runLater(() -> main.getChildren().add(overlay));
                                 } else {
@@ -467,6 +466,8 @@ public class Cracker extends Application {
         Platform.runLater(() -> {
             prog.setTextFill(Color.LIGHTGREEN);
             prog.setText("100% complete");
+            start.setStyle("-fx-base: ivory");
+            start.setText("Start");
         });
     }
 
@@ -475,7 +476,7 @@ public class Cracker extends Application {
         try {
             final SmbFile[] domains = new SmbFile("smb://" + host + "/", auth).listFiles();
             for (int a = 0; a < domains.length; ++a) {
-                final File f = new File(domains[a].getPath().replace("smb:", "").replace("/", "\\"));
+                final File f = new File(domains[a].getPath().replace("smb://", "\\"));
                 final int b = a;
                 if(f.exists()) {
                     return "local";
@@ -485,11 +486,11 @@ public class Cracker extends Application {
                         return "smb";
                     } catch (SmbAuthException e) {
                         return "yes-no-access";
-                    } catch (Throwable t) {}
+                    } catch (Exception t) {}
                 }
             }
             return "yes";
-        } catch (Exception e) {}
+        } catch (Exception e) {e.printStackTrace();}
         return "fail";
     }
 
