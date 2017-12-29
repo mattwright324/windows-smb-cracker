@@ -25,9 +25,11 @@ A warning-overlay will show asking to continue or cancel the operation.
 | Server 2008 | &#10005; | E | SMB2.1 | &#10003; |
 | Windows Vista |&#10003; | &#10003; | SMB2.0 | &#10003; |
 | Server 2003 | &#10003; | &#10003; | SMB1.0 | &#10003; |
-| Windows XP | &#10005; | ? | SMB1.0 | &#10003; |
+| Windows XP | &#10003; | &#10003;** | SMB1.0 | &#10003; |
 | Windows ME | &#10005; | N | SMB1.0 | &#10005;* |
 | Windows 2000 | &#10005; | N | SMB1.0 | &#10005;* |
 | Server 2000 | &#10005; | N | SMB1.0 | &#10005;* |
 | Windows 98 | &#10005; | N | SMB1.0 | &#10005;* |
-\*CIFS Server must be manually enabled in order to connect.
+
+* \*CIFS Server must be manually enabled in order to connect.
+* \*\*Windows XP default only accepts "guest" and any password.
