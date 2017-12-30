@@ -2,6 +2,14 @@
 Crack windows accounts remotely through SMB/CIFS and your provided 
 credentials and password lists.
 
+![Example](https://i.imgur.com/aMKK9Dh.png)
+
+**Success Statuses**
+* **local**: can be accessed locally
+* **smb** successfully accessed through smb
+* **yes** sign-in works no smb or local
+* **yes-no-access** sign-in works but no remote file access
+
 ### Compatibility
 
 The tables below show which versions of Windows can and cannot be cracked with this tool
