@@ -8,7 +8,7 @@ credentials and password lists.
 * **local**: can be accessed locally
 * **smb** successfully accessed through smb
 * **yes** sign-in works no smb or local
-* **yes-no-access** sign-in works but no remote file access
+* **restricted-access** sign-in works but no remote file access
 
 ### Compatibility
 

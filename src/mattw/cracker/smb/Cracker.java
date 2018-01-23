@@ -18,6 +18,7 @@ import javafx.stage.Stage;
 import jcifs.smb.NtlmPasswordAuthentication;
 import jcifs.smb.SmbAuthException;
 import jcifs.smb.SmbFile;
+import mattw.cracker.smb.io.Clipboards;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -26,14 +27,17 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class Cracker extends Application {
 
     private Stage stage;
-    private ListView<Node> results = new ListView<>();
+    private ListView<Entry> results = new ListView<>();
     private Label tps = new Label("0 tps");
     private Label prog = new Label("waiting");
     private TextField domain = new TextField();
@@ -42,15 +46,23 @@ public class Cracker extends Application {
     private Button chooseU = new Button("...");
     private Button start = new Button("Start");
     private Label space = new Label("");
-    private Hyperlink export = new Hyperlink("Save to CSV");
 
     class Entry extends HBox {
+        private String host,domain,user,pass,msg;
         public Entry(String host, String domain, String user, String pass, String msg) {
-            Label login = new Label(user+":"+pass);
+            this.host = host;
+            this.domain = domain;
+            this.user = user;
+            this.pass = pass;
+            this.msg = msg;
+            Label login = new Label(getString());
             login.setMaxWidth(Double.MAX_VALUE);
             HBox.setHgrow(login,Priority.ALWAYS);
             Label result = new Label(msg);
             getChildren().addAll(login, result);
+        }
+        public String getString() {
+            return user+":"+pass+"@"+host;
         }
     }
 
@@ -231,14 +243,25 @@ public class Cracker extends Application {
         grid.addRow(2, lbl2, hbox1);
         grid.addRow(3, new Label(), hbox2);
 
-        Label msg = new Label("No logins found");
-        msg.setFont(Font.font("Tahoma", FontWeight.SEMI_BOLD, 14));
-
         results.setDisable(true);
         results.setMaxHeight(Double.MAX_VALUE);
         results.setStyle("-fx-stroke: red; -fx-stroke-width: 5px; -fx-stroke-dash-array: 12 4 6 4;");
-        results.getItems().add(msg);
+        results.getItems().add(new Entry("","","","","No logins found"));
         VBox.setVgrow(results, Priority.ALWAYS);
+
+        MenuItem item = new MenuItem("Copy");
+        item.setOnAction(ae -> {
+            List<String> toCopy = new ArrayList<>();
+            for(Entry e : results.getSelectionModel().getSelectedItems()) {
+                if(!toCopy.contains(e.getString()))
+                    toCopy.add(e.getString());
+            }
+            Clipboards.setClipboard(toCopy.stream().collect(Collectors.joining("\r\n")));
+        });
+
+        ContextMenu menu = new ContextMenu();
+        menu.getItems().add(item);
+        results.setContextMenu(menu);
 
         tps.setTooltip(new Tooltip("Tries Per Second (TPS)"));
         tps.setFont(Font.font("Tahoma", FontWeight.BOLD, 13));
@@ -249,12 +272,10 @@ public class Cracker extends Application {
         space.setTextAlignment(TextAlignment.CENTER);
         HBox.setHgrow(space, Priority.ALWAYS);
 
-        export.setDisable(true);
-
         HBox hbox3 = new HBox(10);
         hbox3.setAlignment(Pos.CENTER_RIGHT);
         hbox3.setPadding(new Insets(5,10,5,10));
-        hbox3.getChildren().addAll(tps,space,export);
+        hbox3.getChildren().addAll(tps,space);
         hbox3.setStyle("-fx-background-color: lightgray;");
 
         VBox vbox = new VBox();
@@ -351,7 +372,7 @@ public class Cracker extends Application {
         });
 
         Scene scene = new Scene(main, 500, 400);
-        stage.setTitle("Windows SMB Cracker");
+        stage.setTitle("Windows SMB Cracker - v1.0");
         stage.setScene(scene);
         stage.getIcons().add(new Image("mattw/cracker/smb/img/icon2.png"));
         stage.setOnCloseRequest(we -> {
@@ -363,7 +384,7 @@ public class Cracker extends Application {
     }
 
     public void startCracker(String addr, String dom) {
-        setNodesDisabled(true, start, chooseP, chooseU, address, domain);
+        setNodesDisabled(true, chooseP, chooseU, address, domain);
         Platform.runLater(() -> {
             prog.setTextFill(Color.LIGHTGRAY);
             prog.setText("starting");
@@ -403,7 +424,6 @@ public class Cracker extends Application {
                                 Platform.runLater(() -> {
                                     results.getItems().clear();
                                     results.setDisable(false);
-                                    export.setDisable(false);
                                 });
                                 hasResults = true;
                             }
@@ -417,7 +437,7 @@ public class Cracker extends Application {
                 }
                 br.close();
             } catch (Exception e) {
-                setNodesDisabled(false, start, chooseP, chooseU, address, domain);
+                setNodesDisabled(false, chooseP, chooseU, address, domain);
                 Platform.runLater(() -> {
                     prog.setTextFill(Color.FIREBRICK);
                     prog.setText(e.getMessage());
@@ -485,7 +505,7 @@ public class Cracker extends Application {
                         domains[b].listFiles();
                         return "smb";
                     } catch (SmbAuthException e) {
-                        return "yes-no-access";
+                        return "restricted-access";
                     } catch (Exception t) {}
                 }
             }
