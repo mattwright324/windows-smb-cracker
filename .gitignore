@@ -1,4 +1,18 @@
-.idea/
-out/
-*.iml
-META-INF
+/bin/
+
+# Eclipse junk
+.project
+.classpath
+.settings
+
+# Gradle junk
+build/
+.gradle
+
+# Idea junk
+.idea
+jpowder-game.iml
+
+/bin1/
+
+log/
