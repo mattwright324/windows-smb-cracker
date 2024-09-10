@@ -44,6 +44,13 @@ tasks.register('packageJar', Copy) {
     from layout.projectDirectory.file('LICENSE')
     into layout.buildDirectory.dir('package')
 
+    from layout.projectDirectory.file('sample-users.txt')
+    into layout.buildDirectory.dir('package')
+    from layout.projectDirectory.file('sample-passwords.txt')
+    into layout.buildDirectory.dir('package')
+    from layout.projectDirectory.file('sample-10k-passwords.txt')
+    into layout.buildDirectory.dir('package')
+
     from layout.buildDirectory.file('libs/windows-smb-cracker-all.jar')
     into layout.buildDirectory.dir('package')
 

