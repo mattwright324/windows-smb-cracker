@@ -17,7 +17,7 @@ Bruteforce windows accounts remotely through SMB/CIFS and your provided credenti
 
 ## Download
 
-[![GitHub Releases](https://img.shields.io/badge/downloads-releases-brightgreen.svg?maxAge=60&style=flat-square)](https://github.com/mattwright324/jpowder-game/releases)
+[![GitHub Releases](https://img.shields.io/badge/downloads-releases-brightgreen.svg?maxAge=60&style=flat-square)](https://github.com/mattwright324/windows-smb-cracker/releases)
 
 Be sure to have at least Java 11 installed.
 
